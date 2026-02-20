@@ -69,13 +69,25 @@
   }
 
   .layout {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .top-row {
     display: grid;
-    grid-template-columns: 340px 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 20px;
     align-items: start;
   }
 
-  @media (max-width: 800px) { .layout { grid-template-columns: 1fr; } }
+  @media (max-width: 900px) {
+    .top-row { grid-template-columns: 1fr 1fr; }
+  }
+
+  @media (max-width: 580px) {
+    .top-row { grid-template-columns: 1fr; }
+  }
 
   .panel {
     background: var(--surface);
@@ -259,23 +271,35 @@
 
   .palette-swatches { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
 
-  .swatch-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; }
+  .swatch-item { display: flex; flex-direction: column; align-items: center; gap: 4px; }
   .swatch-color {
     width: 34px; height: 34px;
     border-radius: 4px;
     border: 2px solid transparent;
     transition: border-color 0.15s, transform 0.1s;
     position: relative;
-    overflow: hidden;
+    cursor: pointer;
   }
-  .swatch-color:hover { transform: scale(1.15); border-color: rgba(255,255,255,0.4); }
-  .swatch-color input[type=color] {
+  .swatch-color:hover { transform: scale(1.1); border-color: rgba(255,255,255,0.3); }
+  .swatch-color.swap-selected { border-color: #fff; box-shadow: 0 0 0 2px var(--accent); }
+  /* tiny edit pencil in corner opens color picker */
+  .swatch-edit-btn {
     position: absolute;
-    inset: -4px;
+    bottom: 2px; right: 2px;
+    width: 13px; height: 13px;
+    background: rgba(0,0,0,0.55);
+    border-radius: 2px;
+    font-size: 8px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    pointer-events: all;
+  }
+  .swatch-edit-btn input[type=color] {
+    position: absolute;
+    inset: 0;
     opacity: 0;
     cursor: pointer;
-    width: calc(100% + 8px);
-    height: calc(100% + 8px);
+    width: 100%; height: 100%;
   }
   .swatch-label { font-size: 0.52rem; color: var(--muted); max-width: 38px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
 
@@ -332,8 +356,8 @@
   </header>
 
   <div class="layout">
-    <div style="display:flex;flex-direction:column;gap:20px;">
-
+    <div class="top-row">
+      <!-- Col 1: upload -->
       <div class="panel">
         <div class="panel-label">01 — Upload UV Map</div>
         <div class="dropzone" id="dropzone">
@@ -346,6 +370,7 @@
         </div>
       </div>
 
+      <!-- Col 2: flags + controls -->
       <div class="panel">
         <div class="panel-label">02 — Choose Flag</div>
         <div class="search-wrap">
@@ -355,12 +380,19 @@
           <div class="flag-grid" id="flagGrid"></div>
         </div>
 
+        <!-- Custom palette editor - shown only when custom flag selected -->
+        <div id="customPaletteEditor" style="display:none; margin-bottom:16px;">
+          <div class="panel-label">Pick your colors</div>
+          <div id="customColorPickers" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px;"></div>
+          <p class="help-text">Each color maps to a region in the texture. Adjust to build your own flag palette.</p>
+        </div>
+
         <div class="panel-label">03 — Fine-tune</div>
         <div class="sliders">
           <div class="slider-row">
             <span class="slider-label">Color blend</span>
-            <input type="range" id="blendSlider" min="20" max="100" value="65">
-            <span class="slider-val" id="blendVal">65%</span>
+            <input type="range" id="blendSlider" min="20" max="100" value="100">
+            <span class="slider-val" id="blendVal">100%</span>
           </div>
           <div class="slider-row">
             <span class="slider-label">Sectors</span>
@@ -369,8 +401,8 @@
           </div>
           <div class="slider-row">
             <span class="slider-label">Snap thresh</span>
-            <input type="range" id="snapSlider" min="10" max="80" value="35">
-            <span class="slider-val" id="snapVal">35</span>
+            <input type="range" id="snapSlider" min="10" max="80" value="50">
+            <span class="slider-val" id="snapVal">50</span>
           </div>
         </div>
 
@@ -380,9 +412,9 @@
           <div class="progress-label" id="progressLabel">Analyzing pixels...</div>
         </div>
       </div>
-    </div>
 
-    <div class="right-col">
+      <!-- Col 3: instructions -->
+      <div class="right-col">
       <div class="panel" id="placeholderPanel">
         <div class="panel-label">How it works</div>
         <div class="how-to">
@@ -417,7 +449,11 @@
         </div>
       </div>
 
-      <div class="panel output-panel" id="outputPanel">
+      </div>
+    </div><!-- end top-row -->
+
+    <!-- Output panel spans full width below -->
+    <div class="panel output-panel" id="outputPanel">
         <div class="panel-label">Result</div>
         <div class="before-after">
           <div>
@@ -431,25 +467,19 @@
         </div>
 
         <div class="palette-editor">
-          <div class="palette-editor-label">Edit colors — click any swatch to customize</div>
+          <div class="palette-editor-label">Swap colors — click two swatches then hit Swap</div>
           <div class="palette-swatches" id="paletteSwatches"></div>
-
-          <div class="palette-editor-label" style="margin-top:14px;">Swap two colors</div>
-          <p class="help-text">Click two swatches above to select them, then hit Swap to flip them. Hit Reapply to see the result.</p>
           <div class="swap-bar">
-            <div class="swap-slot" id="swapSlot1" title="Click a swatch above to select">?</div>
+            <div class="swap-slot" id="swapSlot1">?</div>
             <div class="swap-arrow">⇄</div>
-            <div class="swap-slot" id="swapSlot2" title="Click a second swatch">?</div>
-            <span class="swap-hint-text" id="swapHint">Click two swatches above to swap them</span>
-            <button class="btn swap-btn" id="swapBtn" disabled>Swap →</button>
+            <div class="swap-slot" id="swapSlot2">?</div>
+            <span class="swap-hint-text" id="swapHint">Click two swatches to swap them</span>
+            <button class="btn swap-btn" id="swapBtn" disabled>Swap + Reprocess →</button>
           </div>
-
-          <button class="btn secondary" id="reapplyBtn">↻ Reapply with custom colors</button>
         </div>
 
         <button class="btn secondary" id="downloadBtn" style="margin-top:10px;">↓ Download PNG</button>
       </div>
-    </div>
   </div>
 </div>
 
@@ -554,6 +584,16 @@ const FLAGS = [
     map:()=>({ red:'pink', orange:'green', whitePink:'pink', whiteBlue:'white', brownPink:'green', brownBlue:'pink', dgray:'green', black:'white' })
   },
 
+  { id:'custom', name:'✦ Build Your Own',
+    swatches:['#ff0000','#ff8800','#ffff00','#00cc00','#0000ff','#8800ff'],
+    custom: true,
+    colors:{
+      color1:[255,0,0], color2:[255,136,0], color3:[255,255,0],
+      color4:[0,204,0], color5:[0,0,255], color6:[136,0,255]
+    },
+    get swatchColors() { return Object.values(this.colors).map(rgb => rgbToHex(...rgb)); },
+    map:()=>({ red:'color1', orange:'color2', whitePink:'color3', whiteBlue:'color4', brownPink:'color5', brownBlue:'color6', dgray:'color5', black:'color6' })
+  },
 
 ];
 
@@ -570,7 +610,8 @@ function buildFlagGrid(filter = '') {
     btn.className = 'flag-btn' + (flag.id === selectedFlag.id ? ' selected' : '');
     const sw = document.createElement('div');
     sw.className = 'flag-swatch';
-    flag.swatches.forEach(c => { const s=document.createElement('span'); s.style.background=c; sw.appendChild(s); });
+    const swatchList = flag.swatchColors || flag.swatches;
+    swatchList.forEach(c => { const s=document.createElement('span'); s.style.background=c; sw.appendChild(s); });
     const nm = document.createElement('div');
     nm.className = 'flag-name';
     nm.textContent = flag.name;
@@ -581,8 +622,41 @@ function buildFlagGrid(filter = '') {
       btn.classList.add('selected');
       selectedFlag = flag;
       customColors = null;
+      toggleCustomEditor(flag);
     });
     flagGrid.appendChild(btn);
+  });
+}
+
+function toggleCustomEditor(flag) {
+  const editor = document.getElementById('customPaletteEditor');
+  const pickers = document.getElementById('customColorPickers');
+  if (!flag.custom) { editor.style.display = 'none'; return; }
+  editor.style.display = 'block';
+  pickers.innerHTML = '';
+  const labels = { color1:'Region 1', color2:'Region 2', color3:'Region 3', color4:'Region 4', color5:'Region 5', color6:'Region 6' };
+  Object.entries(flag.colors).forEach(([key, rgb]) => {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;';
+    const picker = document.createElement('input');
+    picker.type = 'color';
+    picker.value = rgbToHex(...rgb);
+    picker.style.cssText = 'width:36px;height:36px;border:none;cursor:pointer;border-radius:4px;padding:0;background:none;';
+    picker.addEventListener('input', () => {
+      flag.colors[key] = hexToRgb(picker.value);
+      // update swatch strip on the button
+      buildFlagGrid(document.getElementById('flagSearch').value);
+      // re-select it
+      document.querySelectorAll('.flag-btn').forEach(b => {
+        if (b.querySelector('.flag-name').textContent === flag.name) b.classList.add('selected');
+      });
+    });
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:0.5rem;color:var(--muted);text-align:center;';
+    lbl.textContent = labels[key] || key;
+    wrap.appendChild(picker);
+    wrap.appendChild(lbl);
+    pickers.appendChild(wrap);
   });
 }
 buildFlagGrid();
@@ -630,10 +704,10 @@ const progressFill = document.getElementById('progressFill');
 const progressLabel = document.getElementById('progressLabel');
 const outputPanel = document.getElementById('outputPanel');
 const placeholderPanel = document.getElementById('placeholderPanel');
-const reapplyBtn = document.getElementById('reapplyBtn');
+
 
 processBtn.addEventListener('click', ()=>processImage());
-reapplyBtn.addEventListener('click', ()=>processImage(true));
+
 
 function setProgress(pct, label) { progressFill.style.width=pct+'%'; progressLabel.textContent=label; }
 function dist3(r1,g1,b1,r2,g2,b2){return Math.sqrt((r1-r2)**2+(g1-g2)**2+(b1-b2)**2);}
@@ -643,7 +717,6 @@ function hexToRgb(hex){return[parseInt(hex.slice(1,3),16),parseInt(hex.slice(3,5
 function buildPaletteEditor(palette) {
   const ps = document.getElementById('paletteSwatches');
   ps.innerHTML = '';
-  // Reset swap state
   swapSelection = [null, null];
   updateSwapUI();
 
@@ -654,26 +727,15 @@ function buildPaletteEditor(palette) {
     colorDiv.className = 'swatch-color';
     colorDiv.style.background = rgbToHex(...rgb);
     colorDiv.dataset.key = key;
+    colorDiv.title = key;
 
-    const ci = document.createElement('input');
-    ci.type = 'color';
-    ci.value = rgbToHex(...rgb);
-    ci.addEventListener('input', () => {
-      colorDiv.style.background = ci.value;
-      if (!customColors) customColors = JSON.parse(JSON.stringify(palette));
-      customColors[key] = hexToRgb(ci.value);
-    });
-
-    // Click swatch div (not the color picker) to select for swap
-    colorDiv.addEventListener('click', (e) => {
-      if (e.target === ci) return; // let color picker handle its own click
+    colorDiv.addEventListener('click', () => {
       selectForSwap(key, colorDiv, palette);
     });
 
     const lbl = document.createElement('div');
     lbl.className = 'swatch-label';
     lbl.textContent = key;
-    colorDiv.appendChild(ci);
     item.appendChild(colorDiv);
     item.appendChild(lbl);
     ps.appendChild(item);
@@ -761,21 +823,19 @@ document.getElementById('swapBtn').addEventListener('click', () => {
 
   // Update swatch visuals
   swapSelection[0].el.style.background = rgbToHex(...customColors[k1]);
-  swapSelection[0].el.querySelector('input[type=color]').value = rgbToHex(...customColors[k1]);
   swapSelection[1].el.style.background = rgbToHex(...customColors[k2]);
-  swapSelection[1].el.querySelector('input[type=color]').value = rgbToHex(...customColors[k2]);
 
-  // Deselect both
+  // Deselect and reprocess automatically
   swapSelection[0].el.classList.remove('swap-selected');
   swapSelection[1].el.classList.remove('swap-selected');
   swapSelection = [null, null];
   updateSwapUI();
+  processImage(true);
 });
 
 async function processImage(useCustom = false) {
   if (!uploadedImage) return;
   processBtn.disabled = true;
-  reapplyBtn.disabled = true;
   progressWrap.classList.add('visible');
   await sleep(10);
 
@@ -827,10 +887,9 @@ async function processImage(useCustom = false) {
 
     if(tk&&palette[tk]){
       const[tr,tg,tb]=palette[tk];
-      const blend=isWhite?blendAmt:1.0;
-      result[idx]=r*(1-blend)+tr*blend;
-      result[idx+1]=g*(1-blend)+tg*blend;
-      result[idx+2]=b*(1-blend)+tb*blend;
+      result[idx]=r*(1-blendAmt)+tr*blendAmt;
+      result[idx+1]=g*(1-blendAmt)+tg*blendAmt;
+      result[idx+2]=b*(1-blendAmt)+tb*blendAmt;
     }
     if(i%200000===0){setProgress(10+(i/n)*50,'Remapping colors...');await sleep(0);}
   }
@@ -895,7 +954,6 @@ async function processImage(useCustom = false) {
   };
 
   processBtn.disabled=false;
-  reapplyBtn.disabled=false;
   progressWrap.classList.remove('visible');
 }
 
