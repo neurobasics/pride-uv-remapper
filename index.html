@@ -495,36 +495,27 @@ const FLAGS = [
   { id:'progress', name:'Progress Pride',
     swatches:['#e40303','#ff8c00','#ffed00','#008026','#004dff','#750787','#ffffff','#ffafc8','#74d7ee','#613915','#000000'],
     colors:{ red:[228,3,3], orange:[255,140,0], yellow:[255,237,0], green:[0,128,38], blue:[0,77,255], violet:[117,7,135], white:[255,255,255], tpink:[255,175,200], tblue:[116,215,238], brown:[97,57,21], black:[26,26,26] },
-    rainbowMode: true,
-    rainbowKeys: ['red','orange','yellow','green','blue','violet','tpink','tblue','brown','white'],
     map:()=>({ red:'red', orange:'orange', whitePink:'tpink', whiteBlue:'tblue', brownPink:'brown', brownBlue:'violet', dgray:'blue', black:'black' })
   },
   { id:'rainbow', name:'Rainbow',
     swatches:['#e40303','#ff8c00','#ffed00','#008026','#004dff','#750787'],
     colors:{ red:[228,3,3], orange:[255,140,0], yellow:[255,237,0], green:[0,128,38], blue:[0,77,255], violet:[117,7,135] },
-    rainbowMode: true,
     map:()=>({ red:'red', orange:'orange', whitePink:'yellow', whiteBlue:'green', brownPink:'blue', brownBlue:'violet', dgray:'blue', black:'violet' })
   },
 
   { id:'bi', name:'Bisexual',
     swatches:['#d60270','#d60270','#9b4f96','#0038a8','#0038a8'],
     colors:{ pink:[214,2,112], purple:[155,79,150], blue:[0,56,168], white:[255,255,255] },
-    rainbowMode: true,
-    rainbowKeys: ['pink','pink','purple','blue','blue','white'],
     map:()=>({ red:'pink', orange:'blue', whitePink:'pink', whiteBlue:'blue', brownPink:'purple', brownBlue:'blue', dgray:'purple', black:'white' })
   },
   { id:'pan', name:'Pansexual',
     swatches:['#ff218c','#ff218c','#ffd800','#ffd800','#21b1ff'],
     colors:{ pink:[255,33,140], yellow:[255,216,0], blue:[33,177,255], white:[255,255,255] },
-    rainbowMode: true,
-    rainbowKeys: ['pink','pink','yellow','blue','blue','white'],
     map:()=>({ red:'pink', orange:'yellow', whitePink:'pink', whiteBlue:'blue', brownPink:'yellow', brownBlue:'blue', dgray:'blue', black:'white' })
   },
   { id:'lesbian', name:'Lesbian',
     swatches:['#d52d00','#ef7627','#ff9a56','#ffffff','#d162a4','#b55690','#a50062'],
     colors:{ orange:[239,118,39], peach:[255,154,86], white:[255,255,255], pink:[209,98,164], magenta:[165,0,98] },
-    rainbowMode: true,
-    rainbowKeys: ['magenta','orange','peach','white','pink','magenta'],
     map:()=>({ red:'magenta', orange:'orange', whitePink:'peach', whiteBlue:'pink', brownPink:'orange', brownBlue:'pink', dgray:'pink', black:'white' })
   },
   { id:'gaymen', name:'Gay Men',
@@ -887,19 +878,12 @@ async function processImage(useCustom = false) {
     const isBrown=r>100&&r<200&&g>50&&g<140&&b<60&&r>g*1.3&&g>b*1.3&&!isRed&&!isOrange;
 
     let tk=null;
-
-    if(flag.rainbowMode && !isBlack) {
-      const rKeys = flag.rainbowKeys || Object.keys(palette);
-      const rSector = ((sector % rKeys.length) + rKeys.length) % rKeys.length;
-      tk = rKeys[rSector];
-    } else {
-      if(isRed) tk=colorMap.red;
-      else if(isOrange) tk=colorMap.orange;
-      else if(isWhite) tk=isEven?colorMap.whiteBlue:colorMap.whitePink;
-      else if(isBrown) tk=isEven?colorMap.brownBlue:colorMap.brownPink;
-      else if(isDgray) tk=colorMap.dgray;
-      else if(isBlack) tk=colorMap.black;
-    }
+    if(isRed) tk=colorMap.red;
+    else if(isOrange) tk=colorMap.orange;
+    else if(isWhite) tk=isEven?colorMap.whiteBlue:colorMap.whitePink;
+    else if(isBrown) tk=isEven?colorMap.brownBlue:colorMap.brownPink;
+    else if(isDgray) tk=colorMap.dgray;
+    else if(isBlack) tk=colorMap.black;
 
     if(tk&&palette[tk]){
       const[tr,tg,tb]=palette[tk];
