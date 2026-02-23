@@ -2,197 +2,216 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Pride Texture Remapper – Perceptual Mapping</title>
+<title>Pride Texture Remapper (Luminance Based)</title>
 <style>
 body{
-    background:#0e0e0e;
-    color:#f0f0f0;
-    font-family:system-ui, sans-serif;
+    margin:0;
+    background:#0f0f12;
+    color:#fff;
+    font-family:Arial,Helvetica,sans-serif;
     text-align:center;
-    padding:30px;
 }
-h2{
-    font-weight:500;
+h1{
+    margin:20px 0;
+    font-weight:normal;
 }
-.controls{
+#container{
+    width:90%;
+    max-width:1100px;
+    margin:auto;
+}
+#drop{
+    border:2px dashed #555;
+    padding:40px;
     margin-bottom:20px;
-}
-select,input,button{
-    padding:8px 12px;
-    margin:6px;
-    border-radius:6px;
-    border:none;
-}
-button{
+    border-radius:12px;
+    background:#1a1a1f;
     cursor:pointer;
 }
+#drop.dragover{
+    border-color:#fff;
+}
 canvas{
-    max-width:95%;
-    border-radius:10px;
-    margin-top:20px;
+    max-width:100%;
+    border-radius:12px;
+    background:#000;
+}
+select,button{
+    margin:10px;
+    padding:8px 12px;
+    border-radius:6px;
+    border:none;
+    background:#2a2a30;
+    color:#fff;
+}
+button:hover{
+    background:#444;
 }
 </style>
 </head>
 <body>
 
-<h2>Pride Texture Remapper (Perceptual Luminance)</h2>
+<h1>Pride Texture Remapper</h1>
 
-<div class="controls">
-<input type="file" id="upload" accept="image/*">
+<div id="container">
+
+<div id="drop">Drop Image Here or Click to Upload</div>
+<input type="file" id="fileInput" accept="image/*" hidden>
+
 <select id="flagSelect"></select>
-<button onclick="processImage()">Remap</button>
-<button onclick="downloadImage()">Download</button>
-</div>
+<button id="downloadBtn">Download</button>
 
+<br>
 <canvas id="canvas"></canvas>
 
+</div>
+
 <script>
-
-// ---------------------------
-// COMPLETE FLAG SET
-// ---------------------------
-
 const flags = {
-"Transgender": ["#5BCEFA","#F5A9B8","#FFFFFF","#F5A9B8","#5BCEFA"],
-"Progress Pride": ["#000000","#784F17","#5BCEFA","#F5A9B8","#FFFFFF","#F5A9B8","#5BCEFA","#E40303","#FF8C00","#FFED00","#008026","#004DFF","#750787"],
-"Rainbow": ["#E40303","#FF8C00","#FFED00","#008026","#004DFF","#750787"],
-"Bisexual": ["#D60270","#9B4F96","#0038A8"],
-"Pansexual": ["#FF1B8D","#FFD900","#1BB3FF"],
-"Lesbian": ["#D52D00","#FF9A56","#FFFFFF","#D362A4","#A30262"],
-"Gay Men": ["#078D70","#26CEAA","#98E8C1","#FFFFFF","#7BADE2","#5049CC","#3D1A78"],
-"Asexual": ["#000000","#A3A3A3","#FFFFFF","#800080"],
-"Aromantic": ["#3DA542","#A7D379","#FFFFFF","#A9A9A9","#000000"],
-"Aroace": ["#E28C00","#ECC26B","#FFFFFF","#62AEDC","#203856"],
-"Non-Binary": ["#FFF430","#FFFFFF","#9C59D1","#000000"],
-"Genderfluid": ["#FF75A2","#FFFFFF","#BE18D6","#000000","#333EBD"],
-"Genderqueer": ["#B57EDC","#FFFFFF","#4A8123"],
-"Agender": ["#000000","#B9B9B9","#FFFFFF","#B9B9B9","#000000","#B8F483","#000000"],
-"Demisexual": ["#000000","#A3A3A3","#FFFFFF","#800080"],
-"Intersex": ["#FFD800","#7902AA"],
-"Bigender": ["#C479A2","#EDA5CD","#FFFFFF","#9AC7E8","#6D82D1"]
+
+"Transgender":["#5BCFFB","#F5A9B8","#FFFFFF","#F5A9B8","#5BCFFB"],
+
+"Progress Pride":[
+"#000000","#784F17","#E40303","#FF8C00",
+"#FFED00","#008026","#004DFF","#750787",
+"#5BCFFB","#F5A9B8","#FFFFFF"
+],
+
+"Rainbow":[
+"#E40303","#FF8C00","#FFED00",
+"#008026","#004DFF","#750787"
+],
+
+"Bisexual":["#D60270","#9B4F96","#0038A8"],
+
+"Pansexual":["#FF1B8D","#FFD900","#1BB3FF"],
+
+"Lesbian":["#D62900","#FF9B55","#FFFFFF","#D462A6","#A50062"],
+
+"Gay Men":["#078D70","#26CEAA","#98E8C1","#FFFFFF","#7BADE2","#5049CC","#3D1A78"],
+
+"Asexual":["#000000","#A4A4A4","#FFFFFF","#810081"],
+
+"Aromantic":["#3DA542","#A7D379","#FFFFFF","#A9A9A9","#000000"],
+
+"Aroace":["#E28C00","#FDDC5C","#FFFFFF","#62AEDC","#203856"],
+
+"Non-Binary":["#FFF430","#FFFFFF","#9C59D1","#000000"],
+
+"Genderfluid":["#FF75A2","#FFFFFF","#BE18D6","#000000","#333EBD"],
+
+"Genderqueer":["#B57EDC","#FFFFFF","#4A8123"],
+
+"Agender":["#000000","#BABABA","#FFFFFF","#B9F484","#FFFFFF","#BABABA","#000000"],
+
+"Demisexual":["#000000","#A4A4A4","#FFFFFF","#810081"],
+
+"Intersex":["#FFD800","#7A00AC"],
+
+"Bigender":["#C479A2","#EDA5CD","#FFFFFF","#9AC7E8","#6D82D1"]
+
 };
 
-// populate dropdown
 const select = document.getElementById("flagSelect");
-Object.keys(flags).forEach(name=>{
-    const opt = document.createElement("option");
-    opt.value = name;
-    opt.textContent = name;
-    select.appendChild(opt);
+Object.keys(flags).forEach(f=>{
+    const option=document.createElement("option");
+    option.value=f;
+    option.textContent=f;
+    select.appendChild(option);
 });
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-let img = new Image();
+const drop=document.getElementById("drop");
+const fileInput=document.getElementById("fileInput");
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+let originalImage=null;
 
-// ---------------------------
-// IMAGE LOAD
-// ---------------------------
+drop.addEventListener("click",()=>fileInput.click());
 
-document.getElementById("upload").addEventListener("change", e=>{
-    const reader = new FileReader();
-    reader.onload = evt=>{
-        img.onload = ()=>{
-            canvas.width = img.width;
-            canvas.height = img.height;
+drop.addEventListener("dragover",(e)=>{
+    e.preventDefault();
+    drop.classList.add("dragover");
+});
+drop.addEventListener("dragleave",()=>drop.classList.remove("dragover"));
+
+drop.addEventListener("drop",(e)=>{
+    e.preventDefault();
+    drop.classList.remove("dragover");
+    handleFile(e.dataTransfer.files[0]);
+});
+
+fileInput.addEventListener("change",(e)=>{
+    handleFile(e.target.files[0]);
+});
+
+function handleFile(file){
+    const reader=new FileReader();
+    reader.onload=function(e){
+        const img=new Image();
+        img.onload=function(){
+            canvas.width=img.width;
+            canvas.height=img.height;
             ctx.drawImage(img,0,0);
-        };
-        img.src = evt.target.result;
-    };
-    reader.readAsDataURL(e.target.files[0]);
-});
-
-// ---------------------------
-// PERCEPTUAL LUMINANCE
-// ---------------------------
-
-// true linear luminance
-function getLuminance(r,g,b){
-    r/=255; g/=255; b/=255;
-
-    r = r<=0.04045 ? r/12.92 : Math.pow((r+0.055)/1.055,2.4);
-    g = g<=0.04045 ? g/12.92 : Math.pow((g+0.055)/1.055,2.4);
-    b = b<=0.04045 ? b/12.92 : Math.pow((b+0.055)/1.055,2.4);
-
-    return 0.2126*r + 0.7152*g + 0.0722*b;
+            originalImage=img;
+            remap();
+        }
+        img.src=e.target.result;
+    }
+    reader.readAsDataURL(file);
 }
 
-// ---------------------------
-// COLOR HELPERS
-// ---------------------------
+select.addEventListener("change",remap);
 
-function hexToRgb(hex){
-    hex = hex.replace("#","");
-    return [
-        parseInt(hex.substring(0,2),16),
-        parseInt(hex.substring(2,4),16),
-        parseInt(hex.substring(4,6),16)
-    ];
-}
+function remap(){
+    if(!originalImage) return;
 
-function interpolatePalette(palette,t){
-    const n = palette.length-1;
-    const idx = t*n;
-    const i = Math.floor(idx);
-    const f = idx-i;
+    ctx.drawImage(originalImage,0,0);
+    let imageData=ctx.getImageData(0,0,canvas.width,canvas.height);
+    let data=imageData.data;
 
-    if(i>=n) return hexToRgb(palette[n]);
-
-    const c1 = hexToRgb(palette[i]);
-    const c2 = hexToRgb(palette[i+1]);
-
-    return [
-        c1[0] + (c2[0]-c1[0])*f,
-        c1[1] + (c2[1]-c1[1])*f,
-        c1[2] + (c2[2]-c1[2])*f
-    ];
-}
-
-// ---------------------------
-// MAIN PROCESS
-// ---------------------------
-
-function processImage(){
-    if(!img.src) return;
-
-    ctx.drawImage(img,0,0);
-    const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
-    const data = imageData.data;
-
-    const palette = flags[select.value];
+    const palette=flags[select.value].map(hexToRgb);
 
     for(let i=0;i<data.length;i+=4){
+        let r=data[i];
+        let g=data[i+1];
+        let b=data[i+2];
 
-        const r=data[i];
-        const g=data[i+1];
-        const b=data[i+2];
+        // perceptual luminance
+        let lum=(0.2126*r+0.7152*g+0.0722*b)/255;
 
-        let lum = getLuminance(r,g,b);
+        // map luminance to gradient
+        let idx=lum*(palette.length-1);
+        let low=Math.floor(idx);
+        let high=Math.ceil(idx);
+        let t=idx-low;
 
-        // preserve contrast curve
-        lum = Math.pow(lum,0.9);
+        let c1=palette[low];
+        let c2=palette[high];
 
-        const newColor = interpolatePalette(palette,lum);
-
-        data[i]=newColor[0];
-        data[i+1]=newColor[1];
-        data[i+2]=newColor[2];
+        data[i]=c1.r+(c2.r-c1.r)*t;
+        data[i+1]=c1.g+(c2.g-c1.g)*t;
+        data[i+2]=c1.b+(c2.b-c1.b)*t;
     }
 
     ctx.putImageData(imageData,0,0);
 }
 
-// ---------------------------
-// DOWNLOAD
-// ---------------------------
-
-function downloadImage(){
-    const link = document.createElement("a");
-    link.download = "remapped.png";
-    link.href = canvas.toDataURL();
-    link.click();
+function hexToRgb(hex){
+    hex=hex.replace("#","");
+    return {
+        r:parseInt(hex.substring(0,2),16),
+        g:parseInt(hex.substring(2,4),16),
+        b:parseInt(hex.substring(4,6),16)
+    };
 }
 
+document.getElementById("downloadBtn").addEventListener("click",()=>{
+    const link=document.createElement("a");
+    link.download="remapped.png";
+    link.href=canvas.toDataURL();
+    link.click();
+});
 </script>
+
 </body>
 </html>
